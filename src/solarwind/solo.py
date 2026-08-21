@@ -32,6 +32,11 @@ PAS_VARIABLES = {
     "quality_factor": "quality_factor",
 }
 
+# These explicit values come from the respective 2022-02-25 CDF attributes.
+MAG_UINT1_FILL = 254
+MAG_UINT2_FILL = 65534
+PAS_INFO_FILL = 255
+
 MAG_QUALITY_FLAG_NOTES = (
     "Official MAG high-level quality flag: 0 bad; 1 known problems/use at your "
     "own risk; 2 survey data/possibly not publication quality; 3 good for "
@@ -97,7 +102,7 @@ def build_magnetic_dataset(
         dataset[name].attrs["units"] = "nT"
 
     if quality_flag is not None:
-        values = clean_quality_flags(quality_flag, fill_value=np.iinfo(np.uint8).max - 1)
+        values = clean_quality_flags(quality_flag, fill_value=MAG_UINT1_FILL)
         _check_length(values, sample_count, MAG_VARIABLES["quality_flag"])
         dataset["quality_flag"] = ("time", values)
         dataset["quality_flag"].attrs.update(
@@ -107,9 +112,7 @@ def build_magnetic_dataset(
         )
 
     if quality_bitmask is not None:
-        values = clean_quality_flags(
-            quality_bitmask, fill_value=np.iinfo(np.uint16).max - 1
-        )
+        values = clean_quality_flags(quality_bitmask, fill_value=MAG_UINT2_FILL)
         _check_length(values, sample_count, MAG_VARIABLES["quality_bitmask"])
         dataset["quality_bitmask"] = ("time", values)
         dataset["quality_bitmask"].attrs.update(
@@ -119,7 +122,7 @@ def build_magnetic_dataset(
         )
 
     if vector_range is not None:
-        values = clean_quality_flags(vector_range, fill_value=np.iinfo(np.uint8).max - 1)
+        values = clean_quality_flags(vector_range, fill_value=MAG_UINT1_FILL)
         _check_length(values, sample_count, MAG_VARIABLES["vector_range"])
         dataset["vector_range"] = ("time", values)
         dataset["vector_range"].attrs.update(
@@ -191,7 +194,7 @@ def build_proton_dataset(
     dataset["T_p"].attrs["units"] = "eV"
 
     if info is not None:
-        values = clean_quality_flags(info, fill_value=np.iinfo(np.uint8).max)
+        values = clean_quality_flags(info, fill_value=PAS_INFO_FILL)
         _check_length(values, sample_count, PAS_VARIABLES["info"])
         dataset["info"] = ("time", values)
         dataset["info"].attrs.update(

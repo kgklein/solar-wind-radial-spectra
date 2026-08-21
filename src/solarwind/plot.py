@@ -67,16 +67,31 @@ def _plot_native(
 
     label = kwargs.pop("label", None)
     plot_segments = tuple(_continuous_slices(time)) if segments is None else segments
+    series_color = kwargs.pop("color", None)
     for segment_number, segment in enumerate(plot_segments):
         segment_label = label if segment_number == 0 else "_nolegend_"
-        axis.plot(time[segment], values[segment], label=segment_label, **kwargs)
+        lines = axis.plot(
+            time[segment],
+            values[segment],
+            label=segment_label,
+            color=series_color,
+            **kwargs,
+        )
+        if series_color is None:
+            series_color = lines[0].get_color()
 
 
 def print_summary(data: SolarWindData) -> None:
     """Print sample counts, ranges, and native cadence estimates."""
 
-    print(_dataset_summary("FIELDS magnetic field", data.mag))
-    print(_dataset_summary("SPAN-I proton moments", data.protons))
+    print(f"Mission: {data.mag.attrs.get('mission', 'unknown')}")
+    mag_label = f"{data.mag.attrs.get('instrument', 'mag')} {data.mag.attrs.get('datatype', '')}"
+    proton_label = (
+        f"{data.protons.attrs.get('instrument', 'protons')} "
+        f"{data.protons.attrs.get('datatype', '')}"
+    )
+    print(_dataset_summary(mag_label.strip(), data.mag))
+    print(_dataset_summary(proton_label.strip(), data.protons))
     if "r_au" in data.protons and data.protons["r_au"].count() > 0:
         minimum = float(data.protons["r_au"].min(skipna=True))
         maximum = float(data.protons["r_au"].max(skipna=True))
@@ -103,7 +118,8 @@ def diagnostic_plot(data: SolarWindData) -> plt.Figure:
         )
     axes[0].set_ylabel("B [nT]")
     axes[0].legend(loc="upper right", ncols=3)
-    axes[0].set_title("Parker Solar Probe native-cadence time series")
+    mission = data.mag.attrs.get("mission", "Solar wind")
+    axes[0].set_title(f"{mission} native-cadence time series")
 
     _plot_native(
         axes[1],
@@ -165,7 +181,7 @@ def diagnostic_plot(data: SolarWindData) -> plt.Figure:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mission", required=True, help="Mission name (currently PSP only)")
+    parser.add_argument("--mission", required=True, help="Mission name (PSP or SolO)")
     parser.add_argument("--start", required=True, help="Interval start in ISO-8601 format")
     parser.add_argument("--stop", required=True, help="Interval stop in ISO-8601 format")
     parser.add_argument("--output", type=Path, help="Save the plot instead of opening a window")
