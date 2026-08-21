@@ -15,8 +15,8 @@ def test_mission_name_normalization(monkeypatch):
 
 
 def test_unsupported_mission_is_clear():
-    with pytest.raises(NotImplementedError, match="Mission 'solo' is not implemented yet"):
-        load_timeseries("SolO", "2022-01-01", "2022-01-02")
+    with pytest.raises(NotImplementedError, match="Mission 'wind' is not implemented yet"):
+        load_timeseries("Wind", "2022-01-01", "2022-01-02")
 
 
 def test_magnetic_dataset_components_magnitude_metadata_and_fill():
