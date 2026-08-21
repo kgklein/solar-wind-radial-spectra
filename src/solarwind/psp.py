@@ -1,12 +1,20 @@
 """Thin adapter from PSP PySPEDAS products to standardized xarray data."""
 
-from collections.abc import Mapping
 from typing import Any
 
 import numpy as np
 import xarray as xr
 
-from .data import SolarWindData
+from .data import (
+    SolarWindData,
+    clean_measurements as _measurements,
+    clean_quality_flags as _quality_flags,
+    clip_dataset as _clip,
+    notplot_times as _times,
+    notplot_values as _values,
+    required_variable as _required,
+    validate_vector_components as _validate_components,
+)
 
 MAG_VARIABLE = "psp_fld_l2_mag_RTN"
 FIELDS_QUALITY_VARIABLE = "psp_fld_l2_quality_flags"
@@ -39,50 +47,6 @@ SPAN_QUALITY_NOTES = (
     "12 survey available; 13 archive available; 14-15 reserved. Values are "
     "retained for inspection and are not used to remove proton measurements."
 )
-
-
-def _values(variable: Mapping[str, Any], name: str) -> np.ndarray:
-    """Extract a PySPEDAS notplot numerical array with a useful error."""
-
-    if "y" not in variable:
-        raise ValueError(f"PySPEDAS variable '{name}' has no numerical 'y' array.")
-    return np.asarray(variable["y"])
-
-
-def _times(variable: Mapping[str, Any], name: str) -> np.ndarray:
-    """Normalize current datetime64 or legacy Unix-second PySPEDAS times."""
-
-    if "x" not in variable:
-        raise ValueError(f"PySPEDAS variable '{name}' has no time 'x' array.")
-    raw_times = np.asarray(variable["x"])
-    if np.issubdtype(raw_times.dtype, np.datetime64):
-        return raw_times.astype("datetime64[ns]")
-    seconds = raw_times.astype(np.float64)
-    nanoseconds = np.rint(seconds * 1_000_000_000).astype(np.int64)
-    return nanoseconds.astype("datetime64[ns]")
-
-
-def _measurements(values: Any) -> np.ndarray:
-    """Represent CDF fill values as NaN without applying science-quality cuts."""
-
-    output = np.asarray(values, dtype=np.float64).copy()
-    output[~np.isfinite(output) | (np.abs(output) >= 1.0e30)] = np.nan
-    return output
-
-
-def _quality_flags(values: Any, fill_value: int) -> np.ndarray:
-    """Keep bit masks as numbers while representing their CDF fill as NaN."""
-
-    output = np.asarray(values, dtype=np.float64).copy()
-    output[output == fill_value] = np.nan
-    return output
-
-
-def _validate_components(values: np.ndarray, name: str) -> None:
-    if values.ndim != 2 or values.shape[1] != 3:
-        raise ValueError(
-            f"PySPEDAS variable '{name}' must have shape (time, 3); got {values.shape}."
-        )
 
 
 def build_magnetic_dataset(
@@ -207,32 +171,6 @@ def build_proton_dataset(
         )
 
     return dataset
-
-
-def _required(raw: Mapping[str, Any], name: str) -> Mapping[str, Any]:
-    try:
-        return raw[name]
-    except KeyError as error:
-        available = ", ".join(sorted(raw)) or "none"
-        raise RuntimeError(
-            f"PySPEDAS did not return required variable '{name}'. Available: {available}."
-        ) from error
-
-
-def _clip(dataset: xr.Dataset, start: str, stop: str) -> xr.Dataset:
-    """Enforce a half-open requested interval even if a CDF spans beyond it."""
-
-    start_time = np.datetime64(start, "ns")
-    stop_time = np.datetime64(stop, "ns")
-    if stop_time <= start_time:
-        raise ValueError("stop must be later than start.")
-    clipped = dataset.sel(time=(dataset.time >= start_time) & (dataset.time < stop_time))
-    if "quality_time" in clipped.coords:
-        clipped = clipped.sel(
-            quality_time=(clipped.quality_time >= start_time)
-            & (clipped.quality_time < stop_time)
-        )
-    return clipped
 
 
 def load_psp_timeseries(start: str, stop: str) -> SolarWindData:
