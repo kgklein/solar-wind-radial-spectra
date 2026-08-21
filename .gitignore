@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Data/cache
+data/*
+!data/.gitkeep
+
+# PySPEDAS / downloaded spacecraft data
+pyspedas_data/
+*.cdf
+
+# Figures/output
+figures/
+output/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
