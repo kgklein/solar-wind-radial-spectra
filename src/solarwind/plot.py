@@ -1,6 +1,7 @@
 """Command-line diagnostic plotting for native-cadence solar-wind data."""
 
 import argparse
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -36,6 +37,41 @@ def _dataset_summary(name: str, dataset: xr.Dataset) -> str:
     )
 
 
+def _continuous_slices(time: np.ndarray) -> Iterator[slice]:
+    """Split plotting lines at timestamp gaps without changing the data cadence."""
+
+    if time.size == 0:
+        return
+    differences_ns = np.diff(time).astype("timedelta64[ns]").astype(np.int64)
+    positive_differences = differences_ns[differences_ns > 0]
+    if positive_differences.size == 0:
+        yield slice(0, time.size)
+        return
+
+    typical_ns = float(np.median(positive_differences))
+    gap_starts = np.flatnonzero(differences_ns > 10 * typical_ns) + 1
+    boundaries = np.concatenate(([0], gap_starts, [time.size]))
+    for start, stop in zip(boundaries[:-1], boundaries[1:], strict=True):
+        yield slice(int(start), int(stop))
+
+
+def _plot_native(
+    axis,
+    time: np.ndarray,
+    values: np.ndarray,
+    *,
+    segments: Sequence[slice] | None = None,
+    **kwargs,
+) -> None:
+    """Plot every native sample while preventing lines across time gaps."""
+
+    label = kwargs.pop("label", None)
+    plot_segments = tuple(_continuous_slices(time)) if segments is None else segments
+    for segment_number, segment in enumerate(plot_segments):
+        segment_label = label if segment_number == 0 else "_nolegend_"
+        axis.plot(time[segment], values[segment], label=segment_label, **kwargs)
+
+
 def print_summary(data: SolarWindData) -> None:
     """Print sample counts, ranges, and native cadence estimates."""
 
@@ -53,28 +89,72 @@ def diagnostic_plot(data: SolarWindData) -> plt.Figure:
     figure, axes = plt.subplots(6, 1, figsize=(12, 12), sharex=True, constrained_layout=True)
     mag_time = data.mag.time.values
     proton_time = data.protons.time.values
+    mag_segments = tuple(_continuous_slices(mag_time))
+    proton_segments = tuple(_continuous_slices(proton_time))
 
     for component in ("B_R", "B_T", "B_N"):
-        axes[0].plot(mag_time, data.mag[component], linewidth=0.45, label=component)
+        _plot_native(
+            axes[0],
+            mag_time,
+            data.mag[component].values,
+            segments=mag_segments,
+            linewidth=0.45,
+            label=component,
+        )
     axes[0].set_ylabel("B [nT]")
     axes[0].legend(loc="upper right", ncols=3)
     axes[0].set_title("Parker Solar Probe native-cadence time series")
 
-    axes[1].plot(mag_time, data.mag["B_mag"], color="black", linewidth=0.45)
+    _plot_native(
+        axes[1],
+        mag_time,
+        data.mag["B_mag"].values,
+        segments=mag_segments,
+        color="black",
+        linewidth=0.45,
+    )
     axes[1].set_ylabel("|B| [nT]")
 
     for component in ("V_R", "V_T", "V_N"):
-        axes[2].plot(proton_time, data.protons[component], linewidth=0.7, label=component)
+        _plot_native(
+            axes[2],
+            proton_time,
+            data.protons[component].values,
+            segments=proton_segments,
+            linewidth=0.7,
+            label=component,
+        )
     axes[2].set_ylabel("V [km/s]")
     axes[2].legend(loc="upper right", ncols=3)
 
-    axes[3].plot(proton_time, data.protons["V_mag"], color="black", linewidth=0.7)
+    _plot_native(
+        axes[3],
+        proton_time,
+        data.protons["V_mag"].values,
+        segments=proton_segments,
+        color="black",
+        linewidth=0.7,
+    )
     axes[3].set_ylabel("|V| [km/s]")
 
-    axes[4].plot(proton_time, data.protons["n_p"], color="tab:purple", linewidth=0.7)
+    _plot_native(
+        axes[4],
+        proton_time,
+        data.protons["n_p"].values,
+        segments=proton_segments,
+        color="tab:purple",
+        linewidth=0.7,
+    )
     axes[4].set_ylabel("$n_p$ [cm$^{-3}$]")
 
-    axes[5].plot(proton_time, data.protons["T_p"], color="tab:red", linewidth=0.7)
+    _plot_native(
+        axes[5],
+        proton_time,
+        data.protons["T_p"].values,
+        segments=proton_segments,
+        color="tab:red",
+        linewidth=0.7,
+    )
     axes[5].set_ylabel("$T_p$ [eV]")
     axes[5].set_xlabel("UTC")
 

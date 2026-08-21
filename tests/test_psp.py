@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from solarwind.load import load_timeseries
+from solarwind.plot import _continuous_slices
 from solarwind.psp import AU_IN_KM, _times, build_magnetic_dataset, build_proton_dataset
 
 
@@ -80,3 +81,20 @@ def test_pyspedas_time_forms_are_normalized(raw):
 
     assert result.dtype == np.dtype("datetime64[ns]")
     assert result[0] == np.datetime64("2022-01-01T00:00:00", "ns")
+
+
+def test_plot_slices_break_at_timestamp_gaps():
+    time = np.array(
+        [
+            "2022-01-01T00:00:00",
+            "2022-01-01T00:00:01",
+            "2022-01-01T00:00:02",
+            "2022-01-01T00:01:00",
+            "2022-01-01T00:01:01",
+        ],
+        dtype="datetime64[ns]",
+    )
+
+    segments = list(_continuous_slices(time))
+
+    assert segments == [slice(0, 3), slice(3, 5)]
