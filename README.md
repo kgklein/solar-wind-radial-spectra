@@ -27,6 +27,13 @@ reused.
 Load the example day and open a six-panel diagnostic plot:
 
 ```bash
+./example_run.sh
+```
+
+The helper uses `.venv/bin/python` directly, so activating the environment is
+not required. The equivalent explicit command is:
+
+```bash
 python scripts/plot_interval.py \
     --mission PSP \
     --start 2022-02-25T00:00:00 \
