@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
+from matplotlib import pyplot as plt
 
 from solarwind.load import load_timeseries
-from solarwind.plot import _continuous_slices
+from solarwind.plot import _continuous_slices, _plot_native
 from solarwind.psp import AU_IN_KM, _times, build_magnetic_dataset, build_proton_dataset
 
 
@@ -15,8 +16,8 @@ def test_mission_name_normalization(monkeypatch):
 
 
 def test_unsupported_mission_is_clear():
-    with pytest.raises(NotImplementedError, match="Mission 'solo' is not implemented yet"):
-        load_timeseries("SolO", "2022-01-01", "2022-01-02")
+    with pytest.raises(NotImplementedError, match="Mission 'wind' is not implemented yet"):
+        load_timeseries("Wind", "2022-01-01", "2022-01-02")
 
 
 def test_magnetic_dataset_components_magnitude_metadata_and_fill():
@@ -100,3 +101,22 @@ def test_plot_slices_break_at_timestamp_gaps():
     segments = list(_continuous_slices(time))
 
     assert segments == [slice(0, 3), slice(3, 5)]
+
+
+def test_plot_segments_keep_one_series_color():
+    time = np.array(
+        [
+            "2022-01-01T00:00:00",
+            "2022-01-01T00:00:01",
+            "2022-01-01T00:00:02",
+            "2022-01-01T00:01:00",
+        ],
+        dtype="datetime64[ns]",
+    )
+    figure, axis = plt.subplots()
+
+    _plot_native(axis, time, np.array([1.0, 2.0, 3.0, 4.0]))
+
+    assert len(axis.lines) == 2
+    assert axis.lines[0].get_color() == axis.lines[1].get_color()
+    plt.close(figure)
