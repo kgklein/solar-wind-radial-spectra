@@ -19,8 +19,11 @@ source .venv/bin/activate
 python -m pip install -e '.[test]'
 ```
 
-PySPEDAS uses its normal on-disk cache, so files already downloaded by it are
-reused.
+PySPEDAS files are cached under `data/psp` and `data/solar-orbiter`, so files
+already downloaded by either mission adapter are reused. Set
+`SPEDAS_DATA_DIR` before running if you intentionally want a different cache
+root; PySPEDAS's mission-specific `PSP_DATA_DIR` and `SOLO_DATA_DIR` overrides
+remain supported.
 
 ## First plot
 
