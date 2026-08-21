@@ -4,6 +4,7 @@ set -euo pipefail
 
 repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 python_executable="${repository_root}/.venv/bin/python"
+export SPEDAS_DATA_DIR="${repository_root}/data"
 
 if [[ ! -x "${python_executable}" ]]; then
     echo "The project virtual environment was not found at ${repository_root}/.venv." >&2
