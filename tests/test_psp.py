@@ -37,6 +37,7 @@ def test_magnetic_dataset_components_magnitude_metadata_and_fill():
     assert dataset["B_R"].attrs["units"] == "nT"
     assert dataset.attrs["coordinate_system"] == "RTN"
     assert dataset["quality_flag"].dims == ("quality_time",)
+    assert "thruster firing" in dataset["quality_flag"].attrs["description"]
 
 
 def test_proton_dataset_variables_magnitude_units_and_distance_conversion():
@@ -59,6 +60,7 @@ def test_proton_dataset_variables_magnitude_units_and_distance_conversion():
     assert dataset["n_p"].attrs["units"] == "cm^-3"
     assert dataset["T_p"].attrs["units"] == "eV"
     assert dataset.attrs["datatype"] == "sf00_l3_mom"
+    assert "counter overflow" in dataset["quality_flag"].attrs["description"]
 
 
 def test_component_shape_validation():

@@ -74,7 +74,9 @@ definition `1 au = 149597870.7 km`.
 The datasets retain official quality bit masks without applying quality cuts.
 SPAN-I `quality_flag` uses the proton time coordinate. The FIELDS quality flag
 has its own one-minute `quality_time` coordinate because it is not sampled at
-the magnetic waveform cadence. CDF fill values are represented as `NaN`.
+the magnetic waveform cadence. Each flag variable's `description` attribute
+records the official CDF bit meanings. CDF fill values are represented as
+`NaN`.
 
 Magnetic and proton timestamps are never synchronized, interpolated, or
 resampled.

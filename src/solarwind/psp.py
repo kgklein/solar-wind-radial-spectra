@@ -24,11 +24,20 @@ AU_IN_KM = 149_597_870.7
 
 FIELDS_QUALITY_NOTES = (
     "Official FIELDS bit mask on its native one-minute quality_time coordinate. "
-    "Zero means no flags; values are not used to remove magnetic measurements."
+    "Zero means no flags. Values: 1 antenna bias sweep; 2 spacecraft thruster "
+    "firing; 4 SCM calibration; 8 spacecraft MAG-calibration roll; 16 MAG "
+    "calibration sequence; 32 SWEAP/SPC electron mode; 64 solar limb sensor "
+    "test; 128 spacecraft off umbra pointing; 256 high-frequency noise; 512 "
+    "antennas driven toward power-supply rails; 1024 anomalous antenna bias "
+    "current. Values are not used to remove magnetic measurements."
 )
 SPAN_QUALITY_NOTES = (
-    "Official SPAN-I two-byte bit mask. Values are retained for inspection and "
-    "are not used to remove proton measurements."
+    "Official SPAN-I two-byte bit mask. Bits: 0 counter overflow; 1 survey "
+    "snapshot; 2 alternate energy table; 3 spoiler test; 4 attenuator engaged; "
+    "5 highest archive rate; 6 no targeted sweep; 7 new mass table; 8 "
+    "over-deflection; 9 archive snapshot; 10 bad energy table; 11 MCP test; "
+    "12 survey available; 13 archive available; 14-15 reserved. Values are "
+    "retained for inspection and are not used to remove proton measurements."
 )
 
 
